@@ -219,19 +219,57 @@ func TestBaseFileType(t *testing.T) {
 		fileType FileType
 		expected FileType
 	}{
+		// CSV variants
 		{CSV, CSV},
 		{CSVGZ, CSV},
 		{CSVBZ2, CSV},
 		{CSVXZ, CSV},
 		{CSVZSTD, CSV},
+		{CSVZLIB, CSV},
+		{CSVSNAPPY, CSV},
+		{CSVS2, CSV},
+		{CSVLZ4, CSV},
+		// TSV variants
 		{TSV, TSV},
 		{TSVGZ, TSV},
+		{TSVBZ2, TSV},
+		{TSVXZ, TSV},
+		{TSVZSTD, TSV},
+		{TSVZLIB, TSV},
+		{TSVSNAPPY, TSV},
+		{TSVS2, TSV},
+		{TSVLZ4, TSV},
+		// LTSV variants
 		{LTSV, LTSV},
 		{LTSVGZ, LTSV},
+		{LTSVBZ2, LTSV},
+		{LTSVXZ, LTSV},
+		{LTSVZSTD, LTSV},
+		{LTSVZLIB, LTSV},
+		{LTSVSNAPPY, LTSV},
+		{LTSVS2, LTSV},
+		{LTSVLZ4, LTSV},
+		// Parquet variants
 		{Parquet, Parquet},
 		{ParquetGZ, Parquet},
+		{ParquetBZ2, Parquet},
+		{ParquetXZ, Parquet},
+		{ParquetZSTD, Parquet},
+		{ParquetZLIB, Parquet},
+		{ParquetSNAPPY, Parquet},
+		{ParquetS2, Parquet},
+		{ParquetLZ4, Parquet},
+		// XLSX variants
 		{XLSX, XLSX},
 		{XLSXGZ, XLSX},
+		{XLSXBZ2, XLSX},
+		{XLSXXZ, XLSX},
+		{XLSXZSTD, XLSX},
+		{XLSXZLIB, XLSX},
+		{XLSXSNAPPY, XLSX},
+		{XLSXS2, XLSX},
+		{XLSXLZ4, XLSX},
+		// Unsupported
 		{Unsupported, Unsupported},
 	}
 
@@ -277,18 +315,58 @@ func TestFileType_String(t *testing.T) {
 		fileType FileType
 		expected string
 	}{
+		// Base types
 		{CSV, "CSV"},
 		{TSV, "TSV"},
 		{LTSV, "LTSV"},
 		{Parquet, "Parquet"},
 		{XLSX, "XLSX"},
+		// CSV compressed
 		{CSVGZ, "CSV (gzip)"},
 		{CSVBZ2, "CSV (bzip2)"},
 		{CSVXZ, "CSV (xz)"},
 		{CSVZSTD, "CSV (zstd)"},
+		{CSVZLIB, "CSV (zlib)"},
+		{CSVSNAPPY, "CSV (snappy)"},
+		{CSVS2, "CSV (s2)"},
+		{CSVLZ4, "CSV (lz4)"},
+		// TSV compressed
 		{TSVGZ, "TSV (gzip)"},
+		{TSVBZ2, "TSV (bzip2)"},
+		{TSVXZ, "TSV (xz)"},
+		{TSVZSTD, "TSV (zstd)"},
+		{TSVZLIB, "TSV (zlib)"},
+		{TSVSNAPPY, "TSV (snappy)"},
+		{TSVS2, "TSV (s2)"},
+		{TSVLZ4, "TSV (lz4)"},
+		// LTSV compressed
+		{LTSVGZ, "LTSV (gzip)"},
+		{LTSVBZ2, "LTSV (bzip2)"},
+		{LTSVXZ, "LTSV (xz)"},
+		{LTSVZSTD, "LTSV (zstd)"},
+		{LTSVZLIB, "LTSV (zlib)"},
+		{LTSVSNAPPY, "LTSV (snappy)"},
+		{LTSVS2, "LTSV (s2)"},
+		{LTSVLZ4, "LTSV (lz4)"},
+		// Parquet compressed
+		{ParquetGZ, "Parquet (gzip)"},
+		{ParquetBZ2, "Parquet (bzip2)"},
+		{ParquetXZ, "Parquet (xz)"},
 		{ParquetZSTD, "Parquet (zstd)"},
+		{ParquetZLIB, "Parquet (zlib)"},
+		{ParquetSNAPPY, "Parquet (snappy)"},
+		{ParquetS2, "Parquet (s2)"},
+		{ParquetLZ4, "Parquet (lz4)"},
+		// XLSX compressed
 		{XLSXGZ, "XLSX (gzip)"},
+		{XLSXBZ2, "XLSX (bzip2)"},
+		{XLSXXZ, "XLSX (xz)"},
+		{XLSXZSTD, "XLSX (zstd)"},
+		{XLSXZLIB, "XLSX (zlib)"},
+		{XLSXSNAPPY, "XLSX (snappy)"},
+		{XLSXS2, "XLSX (s2)"},
+		{XLSXLZ4, "XLSX (lz4)"},
+		// Unsupported
 		{Unsupported, "Unsupported"},
 		{FileType(999), "Unsupported"},
 	}
@@ -345,6 +423,34 @@ func TestDetectFileType(t *testing.T) {
 		{"data.ltsv.zst", LTSVZSTD},
 		{"data.parquet.zst", ParquetZSTD},
 		{"data.xlsx.zst", XLSXZSTD},
+
+		// ZLIB compressed
+		{"data.csv.z", CSVZLIB},
+		{"data.tsv.z", TSVZLIB},
+		{"data.ltsv.z", LTSVZLIB},
+		{"data.parquet.z", ParquetZLIB},
+		{"data.xlsx.z", XLSXZLIB},
+
+		// Snappy compressed
+		{"data.csv.snappy", CSVSNAPPY},
+		{"data.tsv.snappy", TSVSNAPPY},
+		{"data.ltsv.snappy", LTSVSNAPPY},
+		{"data.parquet.snappy", ParquetSNAPPY},
+		{"data.xlsx.snappy", XLSXSNAPPY},
+
+		// S2 compressed
+		{"data.csv.s2", CSVS2},
+		{"data.tsv.s2", TSVS2},
+		{"data.ltsv.s2", LTSVS2},
+		{"data.parquet.s2", ParquetS2},
+		{"data.xlsx.s2", XLSXS2},
+
+		// LZ4 compressed
+		{"data.csv.lz4", CSVLZ4},
+		{"data.tsv.lz4", TSVLZ4},
+		{"data.ltsv.lz4", LTSVLZ4},
+		{"data.parquet.lz4", ParquetLZ4},
+		{"data.xlsx.lz4", XLSXLZ4},
 
 		// Case insensitive
 		{"DATA.CSV", CSV},
@@ -498,15 +604,235 @@ func TestParseLTSV_MissingValues(t *testing.T) {
 	assert.Equal(t, []string{"3", ""}, result.Records[1]) // missing col_b should be empty
 }
 
+func TestParse_NewCompressionFormats(t *testing.T) {
+	t.Parallel()
+
+	testdataDir := "testdata"
+	if _, err := os.Stat(testdataDir); os.IsNotExist(err) {
+		t.Skip("testdata directory not found")
+	}
+
+	t.Run("parses sample.csv.z (zlib)", func(t *testing.T) {
+		t.Parallel()
+
+		f, err := os.Open(filepath.Join(testdataDir, "sample.csv.z"))
+		require.NoError(t, err)
+		defer f.Close()
+
+		result, err := Parse(f, CSVZLIB)
+
+		require.NoError(t, err)
+		assert.Equal(t, []string{"id", "name", "age", "email"}, result.Headers)
+		assert.Equal(t, 3, len(result.Records))
+	})
+
+	t.Run("parses sample.csv.snappy", func(t *testing.T) {
+		t.Parallel()
+
+		f, err := os.Open(filepath.Join(testdataDir, "sample.csv.snappy"))
+		require.NoError(t, err)
+		defer f.Close()
+
+		result, err := Parse(f, CSVSNAPPY)
+
+		require.NoError(t, err)
+		assert.Equal(t, []string{"id", "name", "age", "email"}, result.Headers)
+		assert.Equal(t, 3, len(result.Records))
+	})
+
+	t.Run("parses sample.csv.s2", func(t *testing.T) {
+		t.Parallel()
+
+		f, err := os.Open(filepath.Join(testdataDir, "sample.csv.s2"))
+		require.NoError(t, err)
+		defer f.Close()
+
+		result, err := Parse(f, CSVS2)
+
+		require.NoError(t, err)
+		assert.Equal(t, []string{"id", "name", "age", "email"}, result.Headers)
+		assert.Equal(t, 3, len(result.Records))
+	})
+
+	t.Run("parses sample.csv.lz4", func(t *testing.T) {
+		t.Parallel()
+
+		f, err := os.Open(filepath.Join(testdataDir, "sample.csv.lz4"))
+		require.NoError(t, err)
+		defer f.Close()
+
+		result, err := Parse(f, CSVLZ4)
+
+		require.NoError(t, err)
+		assert.Equal(t, []string{"id", "name", "age", "email"}, result.Headers)
+		assert.Equal(t, 3, len(result.Records))
+	})
+
+	// TSV compression tests
+	t.Run("parses products.tsv.z (zlib)", func(t *testing.T) {
+		t.Parallel()
+
+		f, err := os.Open(filepath.Join(testdataDir, "products.tsv.z"))
+		require.NoError(t, err)
+		defer f.Close()
+
+		result, err := Parse(f, TSVZLIB)
+
+		require.NoError(t, err)
+		assert.Equal(t, []string{"id", "name", "price"}, result.Headers)
+		assert.Equal(t, 3, len(result.Records))
+	})
+
+	t.Run("parses products.tsv.snappy", func(t *testing.T) {
+		t.Parallel()
+
+		f, err := os.Open(filepath.Join(testdataDir, "products.tsv.snappy"))
+		require.NoError(t, err)
+		defer f.Close()
+
+		result, err := Parse(f, TSVSNAPPY)
+
+		require.NoError(t, err)
+		assert.Equal(t, []string{"id", "name", "price"}, result.Headers)
+		assert.Equal(t, 3, len(result.Records))
+	})
+
+	t.Run("parses products.tsv.s2", func(t *testing.T) {
+		t.Parallel()
+
+		f, err := os.Open(filepath.Join(testdataDir, "products.tsv.s2"))
+		require.NoError(t, err)
+		defer f.Close()
+
+		result, err := Parse(f, TSVS2)
+
+		require.NoError(t, err)
+		assert.Equal(t, []string{"id", "name", "price"}, result.Headers)
+		assert.Equal(t, 3, len(result.Records))
+	})
+
+	t.Run("parses products.tsv.lz4", func(t *testing.T) {
+		t.Parallel()
+
+		f, err := os.Open(filepath.Join(testdataDir, "products.tsv.lz4"))
+		require.NoError(t, err)
+		defer f.Close()
+
+		result, err := Parse(f, TSVLZ4)
+
+		require.NoError(t, err)
+		assert.Equal(t, []string{"id", "name", "price"}, result.Headers)
+		assert.Equal(t, 3, len(result.Records))
+	})
+
+	// LTSV compression tests
+	t.Run("parses logs.ltsv.z (zlib)", func(t *testing.T) {
+		t.Parallel()
+
+		f, err := os.Open(filepath.Join(testdataDir, "logs.ltsv.z"))
+		require.NoError(t, err)
+		defer f.Close()
+
+		result, err := Parse(f, LTSVZLIB)
+
+		require.NoError(t, err)
+		assert.Equal(t, []string{"time", "level", "message"}, result.Headers)
+		assert.Equal(t, 3, len(result.Records))
+	})
+
+	t.Run("parses logs.ltsv.snappy", func(t *testing.T) {
+		t.Parallel()
+
+		f, err := os.Open(filepath.Join(testdataDir, "logs.ltsv.snappy"))
+		require.NoError(t, err)
+		defer f.Close()
+
+		result, err := Parse(f, LTSVSNAPPY)
+
+		require.NoError(t, err)
+		assert.Equal(t, []string{"time", "level", "message"}, result.Headers)
+		assert.Equal(t, 3, len(result.Records))
+	})
+
+	t.Run("parses logs.ltsv.s2", func(t *testing.T) {
+		t.Parallel()
+
+		f, err := os.Open(filepath.Join(testdataDir, "logs.ltsv.s2"))
+		require.NoError(t, err)
+		defer f.Close()
+
+		result, err := Parse(f, LTSVS2)
+
+		require.NoError(t, err)
+		assert.Equal(t, []string{"time", "level", "message"}, result.Headers)
+		assert.Equal(t, 3, len(result.Records))
+	})
+
+	t.Run("parses logs.ltsv.lz4", func(t *testing.T) {
+		t.Parallel()
+
+		f, err := os.Open(filepath.Join(testdataDir, "logs.ltsv.lz4"))
+		require.NoError(t, err)
+		defer f.Close()
+
+		result, err := Parse(f, LTSVLZ4)
+
+		require.NoError(t, err)
+		assert.Equal(t, []string{"time", "level", "message"}, result.Headers)
+		assert.Equal(t, 3, len(result.Records))
+	})
+}
+
+func TestCreateDecompressedReader_InvalidZlib(t *testing.T) {
+	t.Parallel()
+
+	input := strings.NewReader("not zlib data")
+
+	_, _, err := createDecompressedReader(input, CSVZLIB)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "zlib")
+}
+
+func TestParse_InvalidSnappy(t *testing.T) {
+	t.Parallel()
+
+	input := strings.NewReader("not snappy data")
+
+	_, err := Parse(input, CSVSNAPPY)
+
+	assert.Error(t, err)
+}
+
+func TestParse_InvalidS2(t *testing.T) {
+	t.Parallel()
+
+	input := strings.NewReader("not s2 data")
+
+	_, err := Parse(input, CSVS2)
+
+	assert.Error(t, err)
+}
+
+func TestParse_InvalidLZ4(t *testing.T) {
+	t.Parallel()
+
+	input := strings.NewReader("not lz4 data")
+
+	_, err := Parse(input, CSVLZ4)
+
+	assert.Error(t, err)
+}
+
 func TestIsCompressed(t *testing.T) {
 	t.Parallel()
 
 	compressedTypes := []FileType{
-		CSVGZ, CSVBZ2, CSVXZ, CSVZSTD,
-		TSVGZ, TSVBZ2, TSVXZ, TSVZSTD,
-		LTSVGZ, LTSVBZ2, LTSVXZ, LTSVZSTD,
-		ParquetGZ, ParquetBZ2, ParquetXZ, ParquetZSTD,
-		XLSXGZ, XLSXBZ2, XLSXXZ, XLSXZSTD,
+		CSVGZ, CSVBZ2, CSVXZ, CSVZSTD, CSVZLIB, CSVSNAPPY, CSVS2, CSVLZ4,
+		TSVGZ, TSVBZ2, TSVXZ, TSVZSTD, TSVZLIB, TSVSNAPPY, TSVS2, TSVLZ4,
+		LTSVGZ, LTSVBZ2, LTSVXZ, LTSVZSTD, LTSVZLIB, LTSVSNAPPY, LTSVS2, LTSVLZ4,
+		ParquetGZ, ParquetBZ2, ParquetXZ, ParquetZSTD, ParquetZLIB, ParquetSNAPPY, ParquetS2, ParquetLZ4,
+		XLSXGZ, XLSXBZ2, XLSXXZ, XLSXZSTD, XLSXZLIB, XLSXSNAPPY, XLSXS2, XLSXLZ4,
 	}
 
 	uncompressedTypes := []FileType{

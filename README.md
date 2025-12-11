@@ -10,15 +10,16 @@
 This package is designed to be used by [filesql](https://github.com/nao1215/filesql), [fileprep](https://github.com/nao1215/fileprep), and [fileframe](https://github.com/nao1215/fileframe).
 
 - fileprep: struct-tag preprocessing and validation for CSV/TSV/LTSV, Parquet, Excel.
-- filesql: sql driver for CSV, TSV, LTSV, Parquet, Excel with gzip, bzip2, xz, zstd support.
+- filesql: sql driver for CSV, TSV, LTSV, Parquet, Excel with compression support.
 - fileframe: DataFrame API for CSV/TSV/LTSV, Parquet, Excel.
 
 ## Features
 
 - Multiple formats: CSV, TSV, LTSV, Parquet, XLSX
-- Compression support: gzip, bzip2, xz, zstd
+- Compression support: gzip, bzip2, xz, zstd, zlib, snappy, s2, lz4
 - Type inference: Automatically detects column types (TEXT, INTEGER, REAL, DATETIME)
 - File type detection: Detects file format from path extension
+- Pure Go: No CGO required for any compression format
 
 ## Installation
 
@@ -236,11 +237,24 @@ date: DATETIME
 
 | Format  | Extension | Compressed Variants |
 |---------|-----------|---------------------|
-| CSV     | `.csv`    | `.csv.gz`, `.csv.bz2`, `.csv.xz`, `.csv.zst` |
-| TSV     | `.tsv`    | `.tsv.gz`, `.tsv.bz2`, `.tsv.xz`, `.tsv.zst` |
-| LTSV    | `.ltsv`   | `.ltsv.gz`, `.ltsv.bz2`, `.ltsv.xz`, `.ltsv.zst` |
-| Parquet | `.parquet`| `.parquet.gz`, `.parquet.bz2`, `.parquet.xz`, `.parquet.zst` |
-| XLSX    | `.xlsx`   | `.xlsx.gz`, `.xlsx.bz2`, `.xlsx.xz`, `.xlsx.zst` |
+| CSV     | `.csv`    | `.csv.gz`, `.csv.bz2`, `.csv.xz`, `.csv.zst`, `.csv.z`, `.csv.snappy`, `.csv.s2`, `.csv.lz4` |
+| TSV     | `.tsv`    | `.tsv.gz`, `.tsv.bz2`, `.tsv.xz`, `.tsv.zst`, `.tsv.z`, `.tsv.snappy`, `.tsv.s2`, `.tsv.lz4` |
+| LTSV    | `.ltsv`   | `.ltsv.gz`, `.ltsv.bz2`, `.ltsv.xz`, `.ltsv.zst`, `.ltsv.z`, `.ltsv.snappy`, `.ltsv.s2`, `.ltsv.lz4` |
+| Parquet | `.parquet`| `.parquet.gz`, `.parquet.bz2`, `.parquet.xz`, `.parquet.zst`, `.parquet.z`, `.parquet.snappy`, `.parquet.s2`, `.parquet.lz4` |
+| XLSX    | `.xlsx`   | `.xlsx.gz`, `.xlsx.bz2`, `.xlsx.xz`, `.xlsx.zst`, `.xlsx.z`, `.xlsx.snappy`, `.xlsx.s2`, `.xlsx.lz4` |
+
+## Compression Formats
+
+| Format | Extension | Library |
+|--------|-----------|---------|
+| gzip   | `.gz`     | `compress/gzip` (standard library) |
+| bzip2  | `.bz2`    | `compress/bzip2` (standard library) |
+| xz     | `.xz`     | `github.com/ulikunitz/xz` |
+| zstd   | `.zst`    | `github.com/klauspost/compress/zstd` |
+| zlib   | `.z`      | `compress/zlib` (standard library) |
+| Snappy | `.snappy` | `github.com/klauspost/compress/snappy` |
+| S2     | `.s2`     | `github.com/klauspost/compress/s2` |
+| LZ4    | `.lz4`    | `github.com/pierrec/lz4/v4` |
 
 ## Column Types
 
