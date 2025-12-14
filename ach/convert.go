@@ -375,12 +375,12 @@ func convertAddenda(file *ach.File) *fileparser.TableData {
 		"return_settlement_date",                // Addenda99Dishonored/Contested
 		"return_reason_code",                    // Addenda99Dishonored/Contested
 		// Addenda99Contested specific fields
-		"contested_return_code",             // Addenda99Contested
-		"date_original_entry_returned",      // Addenda99Contested
-		"original_settlement_date",          // Addenda99Contested
-		"dishonored_return_trace_number",    // Addenda99Contested
-		"dishonored_return_settlement_date", // Addenda99Contested
-		"dishonored_return_reason_code",     // Addenda99Contested
+		"contested_return_code",                       // Addenda99Contested
+		"date_original_entry_returned",                // Addenda99Contested
+		"original_settlement_date",                    // Addenda99Contested
+		"contested_dishonored_return_trace_number",    // Addenda99Contested
+		"contested_dishonored_return_settlement_date", // Addenda99Contested
+		"contested_dishonored_return_reason_code",     // Addenda99Contested
 	}
 
 	columnTypes := []fileparser.ColumnType{
@@ -419,9 +419,9 @@ func convertAddenda(file *ach.File) *fileparser.TableData {
 		fileparser.TypeText,    // contested_return_code
 		fileparser.TypeText,    // date_original_entry_returned
 		fileparser.TypeText,    // original_settlement_date
-		fileparser.TypeText,    // dishonored_return_trace_number
-		fileparser.TypeText,    // dishonored_return_settlement_date
-		fileparser.TypeText,    // dishonored_return_reason_code
+		fileparser.TypeText,    // contested_dishonored_return_trace_number
+		fileparser.TypeText,    // contested_dishonored_return_settlement_date
+		fileparser.TypeText,    // contested_dishonored_return_reason_code
 	}
 
 	var records [][]string
@@ -1133,13 +1133,13 @@ func (ts *TableSet) applyAddenda99ContestedModifications(addenda *ach.Addenda99C
 	if idx, ok := headerIndex["return_reason_code"]; ok && idx < len(record) {
 		addenda.ReturnReasonCode = record[idx]
 	}
-	if idx, ok := headerIndex["dishonored_return_trace_number"]; ok && idx < len(record) {
+	if idx, ok := headerIndex["contested_dishonored_return_trace_number"]; ok && idx < len(record) {
 		addenda.DishonoredReturnTraceNumber = record[idx]
 	}
-	if idx, ok := headerIndex["dishonored_return_settlement_date"]; ok && idx < len(record) {
+	if idx, ok := headerIndex["contested_dishonored_return_settlement_date"]; ok && idx < len(record) {
 		addenda.DishonoredReturnSettlementDate = record[idx]
 	}
-	if idx, ok := headerIndex["dishonored_return_reason_code"]; ok && idx < len(record) {
+	if idx, ok := headerIndex["contested_dishonored_return_reason_code"]; ok && idx < len(record) {
 		addenda.DishonoredReturnReasonCode = record[idx]
 	}
 	if idx, ok := headerIndex["trace_number"]; ok && idx < len(record) {
