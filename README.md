@@ -242,6 +242,55 @@ date: DATETIME
 | LTSV    | `.ltsv`   | `.ltsv.gz`, `.ltsv.bz2`, `.ltsv.xz`, `.ltsv.zst`, `.ltsv.z`, `.ltsv.snappy`, `.ltsv.s2`, `.ltsv.lz4` |
 | Parquet | `.parquet`| `.parquet.gz`, `.parquet.bz2`, `.parquet.xz`, `.parquet.zst`, `.parquet.z`, `.parquet.snappy`, `.parquet.s2`, `.parquet.lz4` |
 | XLSX    | `.xlsx`   | `.xlsx.gz`, `.xlsx.bz2`, `.xlsx.xz`, `.xlsx.zst`, `.xlsx.z`, `.xlsx.snappy`, `.xlsx.s2`, `.xlsx.lz4` |
+| ACH     | `.ach`    | Not supported |
+
+## ACH (NACHA) Support - Experimental
+
+> **Warning**: ACH file support is **experimental**. The API may change or delete in future versions.
+
+The `ach` subpackage provides support for parsing ACH (Automated Clearing House) files following the NACHA format. ACH files are converted to multiple TableData structures for SQL querying.
+
+### Supported Tables
+
+| Table Name | Description |
+|------------|-------------|
+| `file_header` | File header information (immediate destination, origin, etc.) |
+| `batches` | Batch header and control information |
+| `entries` | Entry detail records (transactions) |
+| `addenda` | Standard addenda records (02, 05, 98, 99, etc.) |
+| `iat_entries` | IAT (International ACH Transaction) entry details |
+| `iat_addenda` | IAT addenda records (10-18, 98, 99) |
+
+### Limitations
+
+**Read-only fields**: The following fields are exported for viewing but changes are not written back to ACH files:
+- IAT Addenda sequence numbers (`entry_detail_sequence_number`, `sequence_number`)
+
+**Addenda05 index behavior**: When an entry has multiple addenda types (e.g., Addenda02 + Addenda05), the `addenda_index` represents the position within all addenda for that entry, not the index within Addenda05 specifically. For updates, use `addenda_type = '05'` to filter correctly.
+
+**Validation**: Modifying ACH data via SQL may create invalid ACH files. The moov-io/ach library's `Create()` method will validate the file, but users should ensure data consistency (e.g., `AddendaRecordIndicator` matches actual addenda presence).
+
+### Usage
+
+```go
+import "github.com/nao1215/fileparser/ach"
+
+// Parse ACH file
+file, err := os.Open("payment.ach")
+if err != nil {
+    log.Fatal(err)
+}
+defer file.Close()
+
+tableSet, err := ach.Parse(file)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Access tables
+entries := tableSet.GetEntriesTable()
+fmt.Printf("Found %d entries\n", len(entries.Records))
+```
 
 ## Compression Formats
 
