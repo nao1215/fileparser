@@ -8,7 +8,7 @@ require (
 	github.com/moov-io/ach v1.53.4
 	github.com/pierrec/lz4/v4 v4.1.22
 	github.com/stretchr/testify v1.11.1
-	github.com/tiendc/go-deepcopy v1.7.1
+	github.com/tiendc/go-deepcopy v1.7.2
 	github.com/ulikunitz/xz v0.5.15
 	github.com/xuri/excelize/v2 v2.10.0
 )
