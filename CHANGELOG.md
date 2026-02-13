@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-02-13
+
+### Added
+
+- **JSON file support** (`.json`):
+  - Array root: each element becomes a row with raw JSON in the `data` column
+  - Object root: single row with the entire object as raw JSON
+  - Nested structures are preserved and queryable via SQLite's `json_extract()`
+  - Compression support: `.json.gz`, `.json.bz2`, `.json.xz`, `.json.zst`, `.json.z`, `.json.snappy`, `.json.s2`, `.json.lz4`
+- **JSONL (JSON Lines) file support** (`.jsonl`):
+  - Each non-empty line becomes a row with raw JSON in the `data` column
+  - Empty lines are silently skipped
+  - Compression support: `.jsonl.gz`, `.jsonl.bz2`, `.jsonl.xz`, `.jsonl.zst`, `.jsonl.z`, `.jsonl.snappy`, `.jsonl.s2`, `.jsonl.lz4`
+- New FileType constants: `JSON`, `JSONL`, `JSONGZ`, `JSONBZ2`, `JSONXZ`, `JSONZSTD`, `JSONZLIB`, `JSONSNAPPY`, `JSONS2`, `JSONLZ4`, `JSONLGZ`, `JSONLBZ2`, `JSONLXZ`, `JSONLZSTD`, `JSONLZLIB`, `JSONLSNAPPY`, `JSONLS2`, `JSONLLZ4`
+
+### Fixed
+
+- Preallocate `records` slices in ACH entry/IAT entry conversion to avoid unnecessary allocations
+
 ## [0.3.0] - 2025-12-14
 
 ### Added
@@ -67,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Records` - data rows as string slices
   - `ColumnTypes` - inferred types for each column
 
+[0.4.0]: https://github.com/nao1215/fileparser/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/nao1215/fileparser/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/nao1215/fileparser/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/nao1215/fileparser/releases/tag/v0.1.0
