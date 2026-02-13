@@ -300,7 +300,11 @@ func convertEntries(file *ach.File) *fileparser.TableData {
 		fileparser.TypeText,    // category
 	}
 
-	var records [][]string
+	totalEntries := 0
+	for _, batch := range file.Batches {
+		totalEntries += len(batch.GetEntries())
+	}
+	records := make([][]string, 0, totalEntries)
 	for batchIdx, batch := range file.Batches {
 		for entryIdx, entry := range batch.GetEntries() {
 			record := []string{
@@ -1338,7 +1342,11 @@ func convertIATEntries(file *ach.File) *fileparser.TableData {
 		fileparser.TypeText,    // category
 	}
 
-	var records [][]string
+	totalEntries := 0
+	for _, batch := range file.IATBatches {
+		totalEntries += len(batch.Entries)
+	}
+	records := make([][]string, 0, totalEntries)
 	for batchIdx, batch := range file.IATBatches {
 		for entryIdx, entry := range batch.Entries {
 			record := []string{

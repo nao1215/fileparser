@@ -269,6 +269,26 @@ func TestBaseFileType(t *testing.T) {
 		{XLSXSNAPPY, XLSX},
 		{XLSXS2, XLSX},
 		{XLSXLZ4, XLSX},
+		// JSON variants
+		{JSON, JSON},
+		{JSONGZ, JSON},
+		{JSONBZ2, JSON},
+		{JSONXZ, JSON},
+		{JSONZSTD, JSON},
+		{JSONZLIB, JSON},
+		{JSONSNAPPY, JSON},
+		{JSONS2, JSON},
+		{JSONLZ4, JSON},
+		// JSONL variants
+		{JSONL, JSONL},
+		{JSONLGZ, JSONL},
+		{JSONLBZ2, JSONL},
+		{JSONLXZ, JSONL},
+		{JSONLZSTD, JSONL},
+		{JSONLZLIB, JSONL},
+		{JSONLSNAPPY, JSONL},
+		{JSONLS2, JSONL},
+		{JSONLLZ4, JSONL},
 		// Unsupported
 		{Unsupported, Unsupported},
 	}
@@ -366,6 +386,26 @@ func TestFileType_String(t *testing.T) {
 		{XLSXSNAPPY, "XLSX (snappy)"},
 		{XLSXS2, "XLSX (s2)"},
 		{XLSXLZ4, "XLSX (lz4)"},
+		// JSON
+		{JSON, "JSON"},
+		{JSONL, "JSONL"},
+		{JSONGZ, "JSON (gzip)"},
+		{JSONBZ2, "JSON (bzip2)"},
+		{JSONXZ, "JSON (xz)"},
+		{JSONZSTD, "JSON (zstd)"},
+		{JSONZLIB, "JSON (zlib)"},
+		{JSONSNAPPY, "JSON (snappy)"},
+		{JSONS2, "JSON (s2)"},
+		{JSONLZ4, "JSON (lz4)"},
+		// JSONL compressed
+		{JSONLGZ, "JSONL (gzip)"},
+		{JSONLBZ2, "JSONL (bzip2)"},
+		{JSONLXZ, "JSONL (xz)"},
+		{JSONLZSTD, "JSONL (zstd)"},
+		{JSONLZLIB, "JSONL (zlib)"},
+		{JSONLSNAPPY, "JSONL (snappy)"},
+		{JSONLS2, "JSONL (s2)"},
+		{JSONLLZ4, "JSONL (lz4)"},
 		// Unsupported
 		{Unsupported, "Unsupported"},
 		{FileType(999), "Unsupported"},
@@ -461,9 +501,30 @@ func TestDetectFileType(t *testing.T) {
 		{"/path/to/data.csv", CSV},
 		{"./relative/path/data.tsv.gz", TSVGZ},
 
+		// JSON
+		{"data.json", JSON},
+		{"data.json.gz", JSONGZ},
+		{"data.json.bz2", JSONBZ2},
+		{"data.json.xz", JSONXZ},
+		{"data.json.zst", JSONZSTD},
+		{"data.json.z", JSONZLIB},
+		{"data.json.snappy", JSONSNAPPY},
+		{"data.json.s2", JSONS2},
+		{"data.json.lz4", JSONLZ4},
+
+		// JSONL
+		{"data.jsonl", JSONL},
+		{"data.jsonl.gz", JSONLGZ},
+		{"data.jsonl.bz2", JSONLBZ2},
+		{"data.jsonl.xz", JSONLXZ},
+		{"data.jsonl.zst", JSONLZSTD},
+		{"data.jsonl.z", JSONLZLIB},
+		{"data.jsonl.snappy", JSONLSNAPPY},
+		{"data.jsonl.s2", JSONLS2},
+		{"data.jsonl.lz4", JSONLLZ4},
+
 		// Unsupported
 		{"data.txt", Unsupported},
-		{"data.json", Unsupported},
 		{"noextension", Unsupported},
 		{"", Unsupported},
 	}
@@ -482,7 +543,7 @@ func TestDetectFileType(t *testing.T) {
 func TestCreateDecompressedReader_NoCompression(t *testing.T) {
 	t.Parallel()
 
-	testCases := []FileType{CSV, TSV, LTSV, Parquet, XLSX}
+	testCases := []FileType{CSV, TSV, LTSV, Parquet, XLSX, JSON, JSONL}
 
 	for _, ft := range testCases {
 		t.Run(ft.String(), func(t *testing.T) {
@@ -833,10 +894,12 @@ func TestIsCompressed(t *testing.T) {
 		LTSVGZ, LTSVBZ2, LTSVXZ, LTSVZSTD, LTSVZLIB, LTSVSNAPPY, LTSVS2, LTSVLZ4,
 		ParquetGZ, ParquetBZ2, ParquetXZ, ParquetZSTD, ParquetZLIB, ParquetSNAPPY, ParquetS2, ParquetLZ4,
 		XLSXGZ, XLSXBZ2, XLSXXZ, XLSXZSTD, XLSXZLIB, XLSXSNAPPY, XLSXS2, XLSXLZ4,
+		JSONGZ, JSONBZ2, JSONXZ, JSONZSTD, JSONZLIB, JSONSNAPPY, JSONS2, JSONLZ4,
+		JSONLGZ, JSONLBZ2, JSONLXZ, JSONLZSTD, JSONLZLIB, JSONLSNAPPY, JSONLS2, JSONLLZ4,
 	}
 
 	uncompressedTypes := []FileType{
-		CSV, TSV, LTSV, Parquet, XLSX, Unsupported,
+		CSV, TSV, LTSV, Parquet, XLSX, JSON, JSONL, Unsupported,
 	}
 
 	for _, ft := range compressedTypes {
