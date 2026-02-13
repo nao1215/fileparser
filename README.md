@@ -5,7 +5,7 @@
 [![MultiPlatformUnitTest](https://github.com/nao1215/fileparser/actions/workflows/unit_test.yml/badge.svg)](https://github.com/nao1215/fileparser/actions/workflows/unit_test.yml)
 ![Coverage](https://raw.githubusercontent.com/nao1215/octocovs-central-repo/main/badges/nao1215/fileparser/coverage.svg)
 
-`fileparser` is a Go library for parsing various tabular data formats. It provides a unified interface for reading CSV, TSV, LTSV, Parquet, and XLSX files, with optional compression support.
+`fileparser` is a Go library for parsing various tabular data formats. It provides a unified interface for reading CSV, TSV, LTSV, JSON, JSONL, Parquet, and XLSX files, with optional compression support.
 
 This package is designed to be used by [filesql](https://github.com/nao1215/filesql), [fileprep](https://github.com/nao1215/fileprep), and [fileframe](https://github.com/nao1215/fileframe).
 
@@ -15,7 +15,7 @@ This package is designed to be used by [filesql](https://github.com/nao1215/file
 
 ## Features
 
-- Multiple formats: CSV, TSV, LTSV, Parquet, XLSX
+- Multiple formats: CSV, TSV, LTSV, JSON, JSONL, Parquet, XLSX
 - Compression support: gzip, bzip2, xz, zstd, zlib, snappy, s2, lz4
 - Type inference: Automatically detects column types (TEXT, INTEGER, REAL, DATETIME)
 - File type detection: Detects file format from path extension
@@ -99,6 +99,67 @@ Output:
 ```text
 Headers: [host method path]
 First row: [192.168.1.1 GET /index.html]
+```
+
+### Parsing JSON
+
+JSON data is stored as raw JSON strings in a single `data` column. You can query fields using SQLite's `json_extract()` function.
+
+```go
+jsonData := `[
+  {"name":"Alice","age":30},
+  {"name":"Bob","age":25},
+  {"name":"Charlie","age":35}
+]`
+
+result, err := fileparser.Parse(strings.NewReader(jsonData), fileparser.JSON)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println("Headers:", result.Headers)
+fmt.Println("Records:", len(result.Records))
+fmt.Println("First row:", result.Records[0])
+```
+
+Output:
+
+```text
+Headers: [data]
+Records: 3
+First row: [{"name":"Alice","age":30}]
+```
+
+JSON supports array root (each element becomes a row), object root (single row), and nested structures. Nested fields are preserved as raw JSON and can be accessed with `json_extract()`:
+
+```sql
+SELECT json_extract(data, '$.name') AS name FROM my_json_table;
+SELECT json_extract(data, '$.address.city') FROM my_json_table;
+```
+
+### Parsing JSONL
+
+JSONL (JSON Lines) stores one JSON value per line. Each line becomes a row with raw JSON in the `data` column.
+
+```go
+jsonlData := `{"name":"Alice","age":30}
+{"name":"Bob","age":25}
+{"name":"Charlie","age":35}`
+
+result, err := fileparser.Parse(strings.NewReader(jsonlData), fileparser.JSONL)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println("Headers:", result.Headers)
+fmt.Println("Records:", len(result.Records))
+```
+
+Output:
+
+```text
+Headers: [data]
+Records: 3
 ```
 
 ### Auto-detect File Type
@@ -240,6 +301,8 @@ date: DATETIME
 | CSV     | `.csv`    | `.csv.gz`, `.csv.bz2`, `.csv.xz`, `.csv.zst`, `.csv.z`, `.csv.snappy`, `.csv.s2`, `.csv.lz4` |
 | TSV     | `.tsv`    | `.tsv.gz`, `.tsv.bz2`, `.tsv.xz`, `.tsv.zst`, `.tsv.z`, `.tsv.snappy`, `.tsv.s2`, `.tsv.lz4` |
 | LTSV    | `.ltsv`   | `.ltsv.gz`, `.ltsv.bz2`, `.ltsv.xz`, `.ltsv.zst`, `.ltsv.z`, `.ltsv.snappy`, `.ltsv.s2`, `.ltsv.lz4` |
+| JSON    | `.json`   | `.json.gz`, `.json.bz2`, `.json.xz`, `.json.zst`, `.json.z`, `.json.snappy`, `.json.s2`, `.json.lz4` |
+| JSONL   | `.jsonl`  | `.jsonl.gz`, `.jsonl.bz2`, `.jsonl.xz`, `.jsonl.zst`, `.jsonl.z`, `.jsonl.snappy`, `.jsonl.s2`, `.jsonl.lz4` |
 | Parquet | `.parquet`| `.parquet.gz`, `.parquet.bz2`, `.parquet.xz`, `.parquet.zst`, `.parquet.z`, `.parquet.snappy`, `.parquet.s2`, `.parquet.lz4` |
 | XLSX    | `.xlsx`   | `.xlsx.gz`, `.xlsx.bz2`, `.xlsx.xz`, `.xlsx.zst`, `.xlsx.z`, `.xlsx.snappy`, `.xlsx.s2`, `.xlsx.lz4` |
 | ACH     | `.ach`    | Not supported |

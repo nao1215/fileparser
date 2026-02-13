@@ -1,6 +1,6 @@
 // Package fileparser provides file parsing functionality for various tabular data formats.
-// It supports CSV, TSV, LTSV, XLSX, and Parquet files, with optional compression
-// (gzip, bzip2, xz, zstd).
+// It supports CSV, TSV, LTSV, XLSX, Parquet, JSON, and JSONL files, with optional compression
+// (gzip, bzip2, xz, zstd, zlib, snappy, s2, lz4).
 //
 // This package can be used by filesql, fileprep, fileframe, or any application
 // that needs to parse tabular data files.
@@ -68,6 +68,10 @@ const (
 	Parquet
 	// XLSX represents Excel XLSX file type.
 	XLSX
+	// JSON represents JSON file type.
+	JSON
+	// JSONL represents JSON Lines file type.
+	JSONL
 
 	// CSVGZ represents gzip-compressed CSV file type.
 	CSVGZ
@@ -157,6 +161,40 @@ const (
 	ParquetLZ4
 	// XLSXLZ4 represents lz4-compressed XLSX file type.
 	XLSXLZ4
+
+	// JSONGZ represents gzip-compressed JSON file type.
+	JSONGZ
+	// JSONBZ2 represents bzip2-compressed JSON file type.
+	JSONBZ2
+	// JSONXZ represents xz-compressed JSON file type.
+	JSONXZ
+	// JSONZSTD represents zstd-compressed JSON file type.
+	JSONZSTD
+	// JSONZLIB represents zlib-compressed JSON file type.
+	JSONZLIB
+	// JSONSNAPPY represents snappy-compressed JSON file type.
+	JSONSNAPPY
+	// JSONS2 represents s2-compressed JSON file type.
+	JSONS2
+	// JSONLZ4 represents lz4-compressed JSON file type.
+	JSONLZ4
+
+	// JSONLGZ represents gzip-compressed JSONL file type.
+	JSONLGZ
+	// JSONLBZ2 represents bzip2-compressed JSONL file type.
+	JSONLBZ2
+	// JSONLXZ represents xz-compressed JSONL file type.
+	JSONLXZ
+	// JSONLZSTD represents zstd-compressed JSONL file type.
+	JSONLZSTD
+	// JSONLZLIB represents zlib-compressed JSONL file type.
+	JSONLZLIB
+	// JSONLSNAPPY represents snappy-compressed JSONL file type.
+	JSONLSNAPPY
+	// JSONLS2 represents s2-compressed JSONL file type.
+	JSONLS2
+	// JSONLLZ4 represents lz4-compressed JSONL file type.
+	JSONLLZ4
 
 	// Unsupported represents unsupported file type.
 	Unsupported
@@ -255,6 +293,42 @@ func (ft FileType) String() string {
 		return "Parquet (lz4)"
 	case XLSXLZ4:
 		return "XLSX (lz4)"
+	case JSON:
+		return "JSON"
+	case JSONL:
+		return "JSONL"
+	case JSONGZ:
+		return "JSON (gzip)"
+	case JSONBZ2:
+		return "JSON (bzip2)"
+	case JSONXZ:
+		return "JSON (xz)"
+	case JSONZSTD:
+		return "JSON (zstd)"
+	case JSONZLIB:
+		return "JSON (zlib)"
+	case JSONSNAPPY:
+		return "JSON (snappy)"
+	case JSONS2:
+		return "JSON (s2)"
+	case JSONLZ4:
+		return "JSON (lz4)"
+	case JSONLGZ:
+		return "JSONL (gzip)"
+	case JSONLBZ2:
+		return "JSONL (bzip2)"
+	case JSONLXZ:
+		return "JSONL (xz)"
+	case JSONLZSTD:
+		return "JSONL (zstd)"
+	case JSONLZLIB:
+		return "JSONL (zlib)"
+	case JSONLSNAPPY:
+		return "JSONL (snappy)"
+	case JSONLS2:
+		return "JSONL (s2)"
+	case JSONLLZ4:
+		return "JSONL (lz4)"
 	default:
 		return "Unsupported"
 	}
@@ -340,6 +414,10 @@ func Parse(reader io.Reader, fileType FileType) (result *TableData, err error) {
 		return parseParquet(decompressedReader)
 	case XLSX:
 		return parseXLSX(decompressedReader)
+	case JSON:
+		return parseJSON(decompressedReader)
+	case JSONL:
+		return parseJSONL(decompressedReader)
 	default:
 		return nil, errors.New("unsupported file type")
 	}
@@ -352,6 +430,8 @@ const (
 	ExtLTSV    = ".ltsv"
 	ExtParquet = ".parquet"
 	ExtXLSX    = ".xlsx"
+	ExtJSON    = ".json"
+	ExtJSONL   = ".jsonl"
 	ExtGZ      = ".gz"
 	ExtBZ2     = ".bz2"
 	ExtXZ      = ".xz"
@@ -515,6 +595,48 @@ func DetectFileType(path string) FileType {
 		default:
 			return XLSX
 		}
+	case ExtJSON:
+		switch compressionType {
+		case compGZ:
+			return JSONGZ
+		case compBZ2:
+			return JSONBZ2
+		case compXZ:
+			return JSONXZ
+		case compZSTD:
+			return JSONZSTD
+		case compZLIB:
+			return JSONZLIB
+		case compSNAPPY:
+			return JSONSNAPPY
+		case compS2:
+			return JSONS2
+		case compLZ4:
+			return JSONLZ4
+		default:
+			return JSON
+		}
+	case ExtJSONL:
+		switch compressionType {
+		case compGZ:
+			return JSONLGZ
+		case compBZ2:
+			return JSONLBZ2
+		case compXZ:
+			return JSONLXZ
+		case compZSTD:
+			return JSONLZSTD
+		case compZLIB:
+			return JSONLZLIB
+		case compSNAPPY:
+			return JSONLSNAPPY
+		case compS2:
+			return JSONLS2
+		case compLZ4:
+			return JSONLLZ4
+		default:
+			return JSONL
+		}
 	default:
 		return Unsupported
 	}
@@ -527,7 +649,9 @@ func IsCompressed(ft FileType) bool {
 		TSVGZ, TSVBZ2, TSVXZ, TSVZSTD, TSVZLIB, TSVSNAPPY, TSVS2, TSVLZ4,
 		LTSVGZ, LTSVBZ2, LTSVXZ, LTSVZSTD, LTSVZLIB, LTSVSNAPPY, LTSVS2, LTSVLZ4,
 		ParquetGZ, ParquetBZ2, ParquetXZ, ParquetZSTD, ParquetZLIB, ParquetSNAPPY, ParquetS2, ParquetLZ4,
-		XLSXGZ, XLSXBZ2, XLSXXZ, XLSXZSTD, XLSXZLIB, XLSXSNAPPY, XLSXS2, XLSXLZ4:
+		XLSXGZ, XLSXBZ2, XLSXXZ, XLSXZSTD, XLSXZLIB, XLSXSNAPPY, XLSXS2, XLSXLZ4,
+		JSONGZ, JSONBZ2, JSONXZ, JSONZSTD, JSONZLIB, JSONSNAPPY, JSONS2, JSONLZ4,
+		JSONLGZ, JSONLBZ2, JSONLXZ, JSONLZSTD, JSONLZLIB, JSONLSNAPPY, JSONLS2, JSONLLZ4:
 		return true
 	default:
 		return false
@@ -547,6 +671,10 @@ func BaseFileType(ft FileType) FileType {
 		return Parquet
 	case XLSX, XLSXGZ, XLSXBZ2, XLSXXZ, XLSXZSTD, XLSXZLIB, XLSXSNAPPY, XLSXS2, XLSXLZ4:
 		return XLSX
+	case JSON, JSONGZ, JSONBZ2, JSONXZ, JSONZSTD, JSONZLIB, JSONSNAPPY, JSONS2, JSONLZ4:
+		return JSON
+	case JSONL, JSONLGZ, JSONLBZ2, JSONLXZ, JSONLZSTD, JSONLZLIB, JSONLSNAPPY, JSONLS2, JSONLLZ4:
+		return JSONL
 	default:
 		return Unsupported
 	}
@@ -555,47 +683,47 @@ func BaseFileType(ft FileType) FileType {
 // createDecompressedReader wraps the reader with appropriate decompression.
 func createDecompressedReader(reader io.Reader, fileType FileType) (io.Reader, func() error, error) {
 	switch fileType {
-	case CSVGZ, TSVGZ, LTSVGZ, XLSXGZ, ParquetGZ:
+	case CSVGZ, TSVGZ, LTSVGZ, XLSXGZ, ParquetGZ, JSONGZ, JSONLGZ:
 		gzReader, err := gzip.NewReader(reader)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create gzip reader: %w", err)
 		}
 		return gzReader, func() error { return gzReader.Close() }, nil
 
-	case CSVBZ2, TSVBZ2, LTSVBZ2, XLSXBZ2, ParquetBZ2:
+	case CSVBZ2, TSVBZ2, LTSVBZ2, XLSXBZ2, ParquetBZ2, JSONBZ2, JSONLBZ2:
 		bz2Reader := bzip2.NewReader(reader)
 		return bz2Reader, nil, nil
 
-	case CSVXZ, TSVXZ, LTSVXZ, XLSXXZ, ParquetXZ:
+	case CSVXZ, TSVXZ, LTSVXZ, XLSXXZ, ParquetXZ, JSONXZ, JSONLXZ:
 		xzReader, err := xz.NewReader(reader)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create xz reader: %w", err)
 		}
 		return xzReader, nil, nil
 
-	case CSVZSTD, TSVZSTD, LTSVZSTD, XLSXZSTD, ParquetZSTD:
+	case CSVZSTD, TSVZSTD, LTSVZSTD, XLSXZSTD, ParquetZSTD, JSONZSTD, JSONLZSTD:
 		decoder, err := zstd.NewReader(reader)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create zstd reader: %w", err)
 		}
 		return decoder, func() error { decoder.Close(); return nil }, nil
 
-	case CSVZLIB, TSVZLIB, LTSVZLIB, XLSXZLIB, ParquetZLIB:
+	case CSVZLIB, TSVZLIB, LTSVZLIB, XLSXZLIB, ParquetZLIB, JSONZLIB, JSONLZLIB:
 		zlibReader, err := zlib.NewReader(reader)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create zlib reader: %w", err)
 		}
 		return zlibReader, func() error { return zlibReader.Close() }, nil
 
-	case CSVSNAPPY, TSVSNAPPY, LTSVSNAPPY, XLSXSNAPPY, ParquetSNAPPY:
+	case CSVSNAPPY, TSVSNAPPY, LTSVSNAPPY, XLSXSNAPPY, ParquetSNAPPY, JSONSNAPPY, JSONLSNAPPY:
 		snappyReader := snappy.NewReader(reader)
 		return snappyReader, nil, nil
 
-	case CSVS2, TSVS2, LTSVS2, XLSXS2, ParquetS2:
+	case CSVS2, TSVS2, LTSVS2, XLSXS2, ParquetS2, JSONS2, JSONLS2:
 		s2Reader := s2.NewReader(reader)
 		return s2Reader, nil, nil
 
-	case CSVLZ4, TSVLZ4, LTSVLZ4, XLSXLZ4, ParquetLZ4:
+	case CSVLZ4, TSVLZ4, LTSVLZ4, XLSXLZ4, ParquetLZ4, JSONLZ4, JSONLLZ4:
 		lz4Reader := lz4.NewReader(reader)
 		return lz4Reader, nil, nil
 
