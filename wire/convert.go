@@ -53,7 +53,9 @@ func FromFile(file *wire.File) *TableSet {
 // This allows round-trip editing: Wire -> TableData -> SQL modifications -> Wire
 //
 // The function creates a deep copy of the original wire file and applies
-// modifications from the TableData.
+// modifications from the TableData. Sub-structs that were nil in the original
+// file are lazily allocated when the TableData record contains non-empty values
+// for their fields, enabling addition of new sections via SQL edits.
 func (ts *TableSet) ToFile() (*wire.File, error) {
 	if ts == nil || ts.original == nil {
 		return nil, errors.New("no original wire file available")
@@ -851,7 +853,254 @@ func messageRecord(fwm *wire.FEDWireMessage) []string {
 	return r
 }
 
+// ensureNonNilSubStructs allocates zero-value sub-structs for any nil pointer fields
+// in the FEDWireMessage when the TableData record contains at least one non-empty value
+// for that section. This allows applyModifications to write values into sections that
+// were absent in the original message.
+func ensureNonNilSubStructs(fwm *wire.FEDWireMessage, headerIndex map[string]int, record []string) {
+	if fwm.SenderSupplied == nil && hasNonEmptyField(headerIndex, record,
+		"sender_supplied_format_version", "sender_supplied_user_request_correlation",
+		"sender_supplied_test_production_code", "sender_supplied_message_duplication_code") {
+		fwm.SenderSupplied = &wire.SenderSupplied{}
+	}
+	if fwm.TypeSubType == nil && hasNonEmptyField(headerIndex, record,
+		"type_code", "sub_type_code") {
+		fwm.TypeSubType = &wire.TypeSubType{}
+	}
+	if fwm.InputMessageAccountabilityData == nil && hasNonEmptyField(headerIndex, record,
+		"imad_input_cycle_date", "imad_input_source", "imad_input_sequence_number") {
+		fwm.InputMessageAccountabilityData = &wire.InputMessageAccountabilityData{}
+	}
+	if fwm.Amount == nil && hasNonEmptyField(headerIndex, record, "amount") {
+		fwm.Amount = &wire.Amount{}
+	}
+	if fwm.SenderDepositoryInstitution == nil && hasNonEmptyField(headerIndex, record,
+		"sender_di_routing_number", "sender_di_short_name") {
+		fwm.SenderDepositoryInstitution = &wire.SenderDepositoryInstitution{}
+	}
+	if fwm.ReceiverDepositoryInstitution == nil && hasNonEmptyField(headerIndex, record,
+		"receiver_di_routing_number", "receiver_di_short_name") {
+		fwm.ReceiverDepositoryInstitution = &wire.ReceiverDepositoryInstitution{}
+	}
+	if fwm.BusinessFunctionCode == nil && hasNonEmptyField(headerIndex, record,
+		"business_function_code", "transaction_type_code") {
+		fwm.BusinessFunctionCode = &wire.BusinessFunctionCode{}
+	}
+	if fwm.SenderReference == nil && hasNonEmptyField(headerIndex, record, "sender_reference") {
+		fwm.SenderReference = &wire.SenderReference{}
+	}
+	if fwm.PreviousMessageIdentifier == nil && hasNonEmptyField(headerIndex, record, "previous_message_identifier") {
+		fwm.PreviousMessageIdentifier = &wire.PreviousMessageIdentifier{}
+	}
+	if fwm.LocalInstrument == nil && hasNonEmptyField(headerIndex, record,
+		"local_instrument_code", "local_instrument_proprietary_code") {
+		fwm.LocalInstrument = &wire.LocalInstrument{}
+	}
+	if fwm.PaymentNotification == nil && hasNonEmptyField(headerIndex, record,
+		"payment_notification_indicator", "payment_notification_electronic_address",
+		"payment_notification_contact_name", "payment_notification_contact_phone_number",
+		"payment_notification_contact_mobile_number", "payment_notification_contact_fax_number",
+		"payment_notification_end_to_end_identification") {
+		fwm.PaymentNotification = &wire.PaymentNotification{}
+	}
+	if fwm.Charges == nil && hasNonEmptyField(headerIndex, record,
+		"charges_details", "charges_senders_one", "charges_senders_two",
+		"charges_senders_three", "charges_senders_four") {
+		fwm.Charges = &wire.Charges{}
+	}
+	if fwm.InstructedAmount == nil && hasNonEmptyField(headerIndex, record,
+		"instructed_amount_currency_code", "instructed_amount_amount") {
+		fwm.InstructedAmount = &wire.InstructedAmount{}
+	}
+	if fwm.ExchangeRate == nil && hasNonEmptyField(headerIndex, record, "exchange_rate") {
+		fwm.ExchangeRate = &wire.ExchangeRate{}
+	}
+	if fwm.BeneficiaryIntermediaryFI == nil && hasNonEmptyField(headerIndex, record, identifiedEntityHeaders("beneficiary_intermediary_fi")...) {
+		fwm.BeneficiaryIntermediaryFI = &wire.BeneficiaryIntermediaryFI{}
+	}
+	if fwm.BeneficiaryFI == nil && hasNonEmptyField(headerIndex, record, identifiedEntityHeaders("beneficiary_fi")...) {
+		fwm.BeneficiaryFI = &wire.BeneficiaryFI{}
+	}
+	if fwm.Beneficiary == nil && hasNonEmptyField(headerIndex, record, identifiedEntityHeaders("beneficiary")...) {
+		fwm.Beneficiary = &wire.Beneficiary{}
+	}
+	if fwm.BeneficiaryReference == nil && hasNonEmptyField(headerIndex, record, "beneficiary_reference") {
+		fwm.BeneficiaryReference = &wire.BeneficiaryReference{}
+	}
+	if fwm.AccountDebitedDrawdown == nil && hasNonEmptyField(headerIndex, record,
+		"account_debited_drawdown_id_code", "account_debited_drawdown_identifier",
+		"account_debited_drawdown_name", "account_debited_drawdown_address_line_one",
+		"account_debited_drawdown_address_line_two", "account_debited_drawdown_address_line_three") {
+		fwm.AccountDebitedDrawdown = &wire.AccountDebitedDrawdown{}
+	}
+	if fwm.Originator == nil && hasNonEmptyField(headerIndex, record, identifiedEntityHeaders("originator")...) {
+		fwm.Originator = &wire.Originator{}
+	}
+	if fwm.OriginatorOptionF == nil && hasNonEmptyField(headerIndex, record,
+		"originator_option_f_party_identifier", "originator_option_f_name",
+		"originator_option_f_line_one", "originator_option_f_line_two", "originator_option_f_line_three") {
+		fwm.OriginatorOptionF = &wire.OriginatorOptionF{}
+	}
+	if fwm.OriginatorFI == nil && hasNonEmptyField(headerIndex, record, identifiedEntityHeaders("originator_fi")...) {
+		fwm.OriginatorFI = &wire.OriginatorFI{}
+	}
+	if fwm.InstructingFI == nil && hasNonEmptyField(headerIndex, record, identifiedEntityHeaders("instructing_fi")...) {
+		fwm.InstructingFI = &wire.InstructingFI{}
+	}
+	if fwm.AccountCreditedDrawdown == nil && hasNonEmptyField(headerIndex, record, "account_credited_drawdown_number") {
+		fwm.AccountCreditedDrawdown = &wire.AccountCreditedDrawdown{}
+	}
+	if fwm.OriginatorToBeneficiary == nil && hasNonEmptyField(headerIndex, record, lineHeaders("originator_to_beneficiary", 4)...) {
+		fwm.OriginatorToBeneficiary = &wire.OriginatorToBeneficiary{}
+	}
+	if fwm.FIReceiverFI == nil && hasNonEmptyField(headerIndex, record, lineHeaders("fi_receiver_fi", 6)...) {
+		fwm.FIReceiverFI = &wire.FIReceiverFI{}
+	}
+	if fwm.FIDrawdownDebitAccountAdvice == nil && hasNonEmptyField(headerIndex, record, adviceHeaders("fi_drawdown_debit_account_advice")...) {
+		fwm.FIDrawdownDebitAccountAdvice = &wire.FIDrawdownDebitAccountAdvice{}
+	}
+	if fwm.FIIntermediaryFI == nil && hasNonEmptyField(headerIndex, record, lineHeaders("fi_intermediary_fi", 6)...) {
+		fwm.FIIntermediaryFI = &wire.FIIntermediaryFI{}
+	}
+	if fwm.FIIntermediaryFIAdvice == nil && hasNonEmptyField(headerIndex, record, adviceHeaders("fi_intermediary_fi_advice")...) {
+		fwm.FIIntermediaryFIAdvice = &wire.FIIntermediaryFIAdvice{}
+	}
+	if fwm.FIBeneficiaryFI == nil && hasNonEmptyField(headerIndex, record, lineHeaders("fi_beneficiary_fi", 6)...) {
+		fwm.FIBeneficiaryFI = &wire.FIBeneficiaryFI{}
+	}
+	if fwm.FIBeneficiaryFIAdvice == nil && hasNonEmptyField(headerIndex, record, adviceHeaders("fi_beneficiary_fi_advice")...) {
+		fwm.FIBeneficiaryFIAdvice = &wire.FIBeneficiaryFIAdvice{}
+	}
+	if fwm.FIBeneficiary == nil && hasNonEmptyField(headerIndex, record, lineHeaders("fi_beneficiary", 6)...) {
+		fwm.FIBeneficiary = &wire.FIBeneficiary{}
+	}
+	if fwm.FIBeneficiaryAdvice == nil && hasNonEmptyField(headerIndex, record, adviceHeaders("fi_beneficiary_advice")...) {
+		fwm.FIBeneficiaryAdvice = &wire.FIBeneficiaryAdvice{}
+	}
+	if fwm.FIPaymentMethodToBeneficiary == nil && hasNonEmptyField(headerIndex, record,
+		"fi_payment_method_to_beneficiary_payment_method", "fi_payment_method_to_beneficiary_additional_information") {
+		fwm.FIPaymentMethodToBeneficiary = &wire.FIPaymentMethodToBeneficiary{}
+	}
+	if fwm.FIAdditionalFIToFI == nil && hasNonEmptyField(headerIndex, record, lineHeaders("fi_additional_fi_to_fi", 6)...) {
+		fwm.FIAdditionalFIToFI = &wire.FIAdditionalFIToFI{}
+	}
+	if fwm.CurrencyInstructedAmount == nil && hasNonEmptyField(headerIndex, record,
+		"currency_instructed_amount_swift_field_tag", "currency_instructed_amount_amount") {
+		fwm.CurrencyInstructedAmount = &wire.CurrencyInstructedAmount{}
+	}
+	if fwm.OrderingCustomer == nil && hasNonEmptyField(headerIndex, record, coverPaymentHeaders("ordering_customer")...) {
+		fwm.OrderingCustomer = &wire.OrderingCustomer{}
+	}
+	if fwm.OrderingInstitution == nil && hasNonEmptyField(headerIndex, record, coverPaymentHeaders("ordering_institution")...) {
+		fwm.OrderingInstitution = &wire.OrderingInstitution{}
+	}
+	if fwm.IntermediaryInstitution == nil && hasNonEmptyField(headerIndex, record, coverPaymentHeaders("intermediary_institution")...) {
+		fwm.IntermediaryInstitution = &wire.IntermediaryInstitution{}
+	}
+	if fwm.InstitutionAccount == nil && hasNonEmptyField(headerIndex, record, coverPaymentHeaders("institution_account")...) {
+		fwm.InstitutionAccount = &wire.InstitutionAccount{}
+	}
+	if fwm.BeneficiaryCustomer == nil && hasNonEmptyField(headerIndex, record, coverPaymentHeaders("beneficiary_customer")...) {
+		fwm.BeneficiaryCustomer = &wire.BeneficiaryCustomer{}
+	}
+	if fwm.Remittance == nil && hasNonEmptyField(headerIndex, record, coverPaymentHeaders("remittance")...) {
+		fwm.Remittance = &wire.Remittance{}
+	}
+	if fwm.SenderToReceiver == nil && hasNonEmptyField(headerIndex, record, coverPaymentHeaders("sender_to_receiver")...) {
+		fwm.SenderToReceiver = &wire.SenderToReceiver{}
+	}
+	if fwm.UnstructuredAddenda == nil && hasNonEmptyField(headerIndex, record,
+		"unstructured_addenda_length", "unstructured_addenda") {
+		fwm.UnstructuredAddenda = &wire.UnstructuredAddenda{}
+	}
+	if fwm.RelatedRemittance == nil {
+		fields := make([]string, 0, 3+len(remittanceDataHeaders("related_remittance")))
+		fields = append(fields, "related_remittance_identification", "related_remittance_location_method", "related_remittance_location_electronic_address")
+		fields = append(fields, remittanceDataHeaders("related_remittance")...)
+		if hasNonEmptyField(headerIndex, record, fields...) {
+			fwm.RelatedRemittance = &wire.RelatedRemittance{}
+		}
+	}
+	if fwm.RemittanceOriginator == nil {
+		fields := make([]string, 0, 10+len(remittanceDataHeaders("remittance_originator")))
+		fields = append(fields,
+			"remittance_originator_identification_type", "remittance_originator_identification_code",
+			"remittance_originator_identification_number", "remittance_originator_identification_number_issuer",
+			"remittance_originator_contact_name", "remittance_originator_contact_phone_number",
+			"remittance_originator_contact_mobile_number", "remittance_originator_contact_fax_number",
+			"remittance_originator_contact_electronic_address", "remittance_originator_contact_other",
+		)
+		fields = append(fields, remittanceDataHeaders("remittance_originator")...)
+		if hasNonEmptyField(headerIndex, record, fields...) {
+			fwm.RemittanceOriginator = &wire.RemittanceOriginator{}
+		}
+	}
+	if fwm.RemittanceBeneficiary == nil {
+		fields := make([]string, 0, 4+len(remittanceDataHeaders("remittance_beneficiary")))
+		fields = append(fields,
+			"remittance_beneficiary_identification_type", "remittance_beneficiary_identification_code",
+			"remittance_beneficiary_identification_number", "remittance_beneficiary_identification_number_issuer",
+		)
+		fields = append(fields, remittanceDataHeaders("remittance_beneficiary")...)
+		if hasNonEmptyField(headerIndex, record, fields...) {
+			fwm.RemittanceBeneficiary = &wire.RemittanceBeneficiary{}
+		}
+	}
+	if fwm.PrimaryRemittanceDocument == nil && hasNonEmptyField(headerIndex, record, remittanceDocumentHeaders("primary_remittance_document")...) {
+		fwm.PrimaryRemittanceDocument = &wire.PrimaryRemittanceDocument{}
+	}
+	if fwm.ActualAmountPaid == nil && hasNonEmptyField(headerIndex, record, remittanceAmountHeaders("actual_amount_paid")...) {
+		fwm.ActualAmountPaid = &wire.ActualAmountPaid{}
+	}
+	if fwm.GrossAmountRemittanceDocument == nil && hasNonEmptyField(headerIndex, record, remittanceAmountHeaders("gross_amount_remittance_document")...) {
+		fwm.GrossAmountRemittanceDocument = &wire.GrossAmountRemittanceDocument{}
+	}
+	if fwm.AmountNegotiatedDiscount == nil && hasNonEmptyField(headerIndex, record, remittanceAmountHeaders("amount_negotiated_discount")...) {
+		fwm.AmountNegotiatedDiscount = &wire.AmountNegotiatedDiscount{}
+	}
+	if fwm.Adjustment == nil {
+		fields := make([]string, 0, 3+len(remittanceAmountHeaders("adjustment")))
+		fields = append(fields, "adjustment_reason_code", "adjustment_credit_debit_indicator", "adjustment_additional_info")
+		fields = append(fields, remittanceAmountHeaders("adjustment")...)
+		if hasNonEmptyField(headerIndex, record, fields...) {
+			fwm.Adjustment = &wire.Adjustment{}
+		}
+	}
+	if fwm.DateRemittanceDocument == nil && hasNonEmptyField(headerIndex, record, "date_remittance_document") {
+		fwm.DateRemittanceDocument = &wire.DateRemittanceDocument{}
+	}
+	if fwm.SecondaryRemittanceDocument == nil && hasNonEmptyField(headerIndex, record, remittanceDocumentHeaders("secondary_remittance_document")...) {
+		fwm.SecondaryRemittanceDocument = &wire.SecondaryRemittanceDocument{}
+	}
+	if fwm.RemittanceFreeText == nil && hasNonEmptyField(headerIndex, record, lineHeaders("remittance_free_text", 3)...) {
+		fwm.RemittanceFreeText = &wire.RemittanceFreeText{}
+	}
+	if fwm.ServiceMessage == nil && hasNonEmptyField(headerIndex, record, lineHeaders("service_message", 12)...) {
+		fwm.ServiceMessage = &wire.ServiceMessage{}
+	}
+	if fwm.MessageDisposition == nil && hasNonEmptyField(headerIndex, record,
+		"message_disposition_format_version", "message_disposition_test_production_code",
+		"message_disposition_message_duplication_code", "message_disposition_message_status_indicator") {
+		fwm.MessageDisposition = &wire.MessageDisposition{}
+	}
+	if fwm.ReceiptTimeStamp == nil && hasNonEmptyField(headerIndex, record,
+		"receipt_time_stamp_receipt_date", "receipt_time_stamp_receipt_time",
+		"receipt_time_stamp_receipt_application_identification") {
+		fwm.ReceiptTimeStamp = &wire.ReceiptTimeStamp{}
+	}
+	if fwm.OutputMessageAccountabilityData == nil && hasNonEmptyField(headerIndex, record,
+		"omad_output_cycle_date", "omad_output_destination_id", "omad_output_sequence_number",
+		"omad_output_date", "omad_output_time", "omad_output_frb_application_identification") {
+		fwm.OutputMessageAccountabilityData = &wire.OutputMessageAccountabilityData{}
+	}
+	if fwm.ErrorWire == nil && hasNonEmptyField(headerIndex, record,
+		"error_wire_category", "error_wire_code", "error_wire_description") {
+		fwm.ErrorWire = &wire.ErrorWire{}
+	}
+}
+
 // applyModifications writes all field values from the TableData record back to a FEDWireMessage.
+// Nil sub-structs are lazily allocated when the record contains non-empty values for their fields.
 func applyModifications(fwm *wire.FEDWireMessage, td *fileparser.TableData) {
 	if len(td.Records) == 0 {
 		return
@@ -863,6 +1112,9 @@ func applyModifications(fwm *wire.FEDWireMessage, td *fileparser.TableData) {
 	}
 
 	record := td.Records[0]
+
+	// Lazily allocate nil sub-structs that have non-empty values in the record.
+	ensureNonNilSubStructs(fwm, headerIndex, record)
 
 	// SenderSupplied
 	if fwm.SenderSupplied != nil {
@@ -1393,6 +1645,16 @@ func setField(headerIndex map[string]int, record []string, name string, target *
 	if idx, ok := headerIndex[name]; ok && idx < len(record) {
 		*target = record[idx]
 	}
+}
+
+// hasNonEmptyField returns true if at least one of the named columns has a non-empty value in the record.
+func hasNonEmptyField(headerIndex map[string]int, record []string, names ...string) bool {
+	for _, name := range names {
+		if idx, ok := headerIndex[name]; ok && idx < len(record) && record[idx] != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // applyFinancialInstitution applies modifications to a FinancialInstitution.

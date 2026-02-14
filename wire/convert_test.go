@@ -884,6 +884,166 @@ func TestDeepCopyFile_AllFields(t *testing.T) {
 	assert.Equal(t, "REF123", file.FEDWireMessage.SenderReference.SenderReference)
 }
 
+func TestHasNonEmptyField(t *testing.T) {
+	t.Parallel()
+
+	headerIndex := map[string]int{"a": 0, "b": 1, "c": 2}
+
+	t.Run("returns true when at least one field is non-empty", func(t *testing.T) {
+		t.Parallel()
+		record := []string{"", "value", ""}
+		assert.True(t, hasNonEmptyField(headerIndex, record, "a", "b", "c"))
+	})
+
+	t.Run("returns false when all fields are empty", func(t *testing.T) {
+		t.Parallel()
+		record := []string{"", "", ""}
+		assert.False(t, hasNonEmptyField(headerIndex, record, "a", "b", "c"))
+	})
+
+	t.Run("returns false for unknown field names", func(t *testing.T) {
+		t.Parallel()
+		record := []string{"x", "y", "z"}
+		assert.False(t, hasNonEmptyField(headerIndex, record, "unknown"))
+	})
+
+	t.Run("returns false when record is shorter than index", func(t *testing.T) {
+		t.Parallel()
+		record := []string{"x"}
+		assert.False(t, hasNonEmptyField(headerIndex, record, "c"))
+	})
+}
+
+func TestEnsureNonNilSubStructs_AllocatesOnNonEmptyValues(t *testing.T) {
+	t.Parallel()
+
+	// Start with a minimal FEDWireMessage where most sub-structs are nil
+	fwm := &wire.FEDWireMessage{}
+
+	headers := messageHeaders()
+	headerIndex := buildHeaderIndex(headers)
+	record := make([]string, len(headers))
+
+	// Set a non-empty value for Charges (originally nil)
+	if idx, ok := headerIndex["charges_details"]; ok {
+		record[idx] = "B"
+	}
+	// Set a non-empty value for LocalInstrument (originally nil)
+	if idx, ok := headerIndex["local_instrument_code"]; ok {
+		record[idx] = "ANSI"
+	}
+	// Set a non-empty value for Beneficiary (originally nil)
+	if idx, ok := headerIndex["beneficiary_name"]; ok {
+		record[idx] = "Jane Doe"
+	}
+
+	ensureNonNilSubStructs(fwm, headerIndex, record)
+
+	// Sub-structs with non-empty values should be allocated
+	assert.NotNil(t, fwm.Charges, "Charges should be allocated when record has non-empty charges_details")
+	assert.NotNil(t, fwm.LocalInstrument, "LocalInstrument should be allocated when record has non-empty local_instrument_code")
+	assert.NotNil(t, fwm.Beneficiary, "Beneficiary should be allocated when record has non-empty beneficiary_name")
+
+	// Sub-structs with all-empty values should remain nil
+	assert.Nil(t, fwm.SenderReference, "SenderReference should remain nil when record has empty sender_reference")
+	assert.Nil(t, fwm.ExchangeRate, "ExchangeRate should remain nil when record has empty exchange_rate")
+	assert.Nil(t, fwm.ServiceMessage, "ServiceMessage should remain nil when all service_message lines are empty")
+}
+
+func TestApplyModifications_NilSubStructsReceiveValues(t *testing.T) {
+	t.Parallel()
+
+	// Create a FEDWireMessage where Charges and LocalInstrument are nil
+	fwm := &wire.FEDWireMessage{
+		SenderSupplied: &wire.SenderSupplied{FormatVersion: "30"},
+		TypeSubType:    &wire.TypeSubType{TypeCode: "10", SubTypeCode: "00"},
+		InputMessageAccountabilityData: &wire.InputMessageAccountabilityData{
+			InputCycleDate: "20200101", InputSource: "SRC", InputSequenceNumber: "000001",
+		},
+		Amount:                        &wire.Amount{Amount: "000001000000"},
+		SenderDepositoryInstitution:   &wire.SenderDepositoryInstitution{SenderABANumber: "121042882"},
+		ReceiverDepositoryInstitution: &wire.ReceiverDepositoryInstitution{ReceiverABANumber: "231380104"},
+		BusinessFunctionCode:          &wire.BusinessFunctionCode{BusinessFunctionCode: "CTR"},
+		// Charges is intentionally nil
+		// LocalInstrument is intentionally nil
+	}
+
+	// Build TableData from the message (nil sub-structs become empty strings)
+	headers := messageHeaders()
+	record := messageRecord(fwm)
+
+	headerIndex := buildHeaderIndex(headers)
+
+	// Simulate user editing: set values for originally-nil sub-structs
+	if idx, ok := headerIndex["charges_details"]; ok {
+		record[idx] = "B"
+	}
+	if idx, ok := headerIndex["charges_senders_one"]; ok {
+		record[idx] = "USD10,00"
+	}
+	if idx, ok := headerIndex["local_instrument_code"]; ok {
+		record[idx] = "ANSI"
+	}
+
+	td := &fileparser.TableData{
+		Headers: headers,
+		Records: [][]string{record},
+	}
+
+	// Apply modifications — previously this would silently drop the edits
+	applyModifications(fwm, td)
+
+	// Verify the previously-nil sub-structs now have the user's values
+	require.NotNil(t, fwm.Charges, "Charges should be allocated after applying non-empty values")
+	assert.Equal(t, "B", fwm.Charges.ChargeDetails)
+	assert.Equal(t, "USD10,00", fwm.Charges.SendersChargesOne)
+
+	require.NotNil(t, fwm.LocalInstrument, "LocalInstrument should be allocated after applying non-empty values")
+	assert.Equal(t, "ANSI", fwm.LocalInstrument.LocalInstrumentCode)
+}
+
+func TestToFile_RoundTripWithNewSections(t *testing.T) {
+	t.Parallel()
+
+	// Create a minimal wire file without Charges
+	file := &wire.File{
+		ID: "test-roundtrip",
+		FEDWireMessage: wire.FEDWireMessage{
+			SenderSupplied: &wire.SenderSupplied{FormatVersion: "30"},
+			TypeSubType:    &wire.TypeSubType{TypeCode: "10", SubTypeCode: "00"},
+			InputMessageAccountabilityData: &wire.InputMessageAccountabilityData{
+				InputCycleDate: "20200101", InputSource: "SRC", InputSequenceNumber: "000001",
+			},
+			Amount:                        &wire.Amount{Amount: "000001000000"},
+			SenderDepositoryInstitution:   &wire.SenderDepositoryInstitution{SenderABANumber: "121042882"},
+			ReceiverDepositoryInstitution: &wire.ReceiverDepositoryInstitution{ReceiverABANumber: "231380104"},
+			BusinessFunctionCode:          &wire.BusinessFunctionCode{BusinessFunctionCode: "CTR"},
+		},
+	}
+	assert.Nil(t, file.FEDWireMessage.Charges, "precondition: Charges should be nil")
+
+	// Convert to TableSet
+	ts := FromFile(file)
+	require.NotNil(t, ts)
+
+	// Simulate SQL edit: set charges in the TableData
+	headerIndex := buildHeaderIndex(ts.Message.Headers)
+	if idx, ok := headerIndex["charges_details"]; ok {
+		ts.Message.Records[0][idx] = "B"
+	}
+
+	// Round-trip back to wire.File
+	newFile, err := ts.ToFile()
+	require.NoError(t, err)
+
+	// The new file should have a Charges section with the user's value
+	require.NotNil(t, newFile.FEDWireMessage.Charges, "Charges should be present in reconstructed file")
+	assert.Equal(t, "B", newFile.FEDWireMessage.Charges.ChargeDetails)
+
+	// Original file should be unmodified
+	assert.Nil(t, file.FEDWireMessage.Charges, "original file should remain unmodified")
+}
+
 // --- Test helpers ---
 
 func readTestFile(t *testing.T, path string) *wire.File {
