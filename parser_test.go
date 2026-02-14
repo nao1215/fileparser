@@ -523,7 +523,12 @@ func TestDetectFileType(t *testing.T) {
 		{"data.jsonl.s2", JSONLS2},
 		{"data.jsonl.lz4", JSONLLZ4},
 
-		// Unsupported
+		// Unsupported (.fed is handled by fileparser/wire subpackage, not by Parse)
+		{"payment.fed", Unsupported},
+		{"payment.FED", Unsupported},
+		{"payment.fed.gz", Unsupported},
+		{"payment.fed.zst", Unsupported},
+		{"/path/to/payment.fed", Unsupported},
 		{"data.txt", Unsupported},
 		{"noextension", Unsupported},
 		{"", Unsupported},
