@@ -306,6 +306,7 @@ date: DATETIME
 | Parquet | `.parquet`| `.parquet.gz`, `.parquet.bz2`, `.parquet.xz`, `.parquet.zst`, `.parquet.z`, `.parquet.snappy`, `.parquet.s2`, `.parquet.lz4` |
 | XLSX    | `.xlsx`   | `.xlsx.gz`, `.xlsx.bz2`, `.xlsx.xz`, `.xlsx.zst`, `.xlsx.z`, `.xlsx.snappy`, `.xlsx.s2`, `.xlsx.lz4` |
 | ACH     | `.ach`    | Not supported |
+| Fedwire | `.fed`    | Not supported |
 
 ## ACH (NACHA) Support - Experimental
 
@@ -353,6 +354,61 @@ if err != nil {
 // Access tables
 entries := tableSet.GetEntriesTable()
 fmt.Printf("Found %d entries\n", len(entries.Records))
+```
+
+## Fedwire Support - Experimental
+
+> **Warning**: Fedwire file support is **experimental**. The API may change or be removed in future versions.
+
+The `wire` subpackage provides support for parsing legacy Fedwire message files (`.fed`) using the `moov-io/wire` library. A single Fedwire file contains one FEDWireMessage, which is converted to a single-row flat table with approximately 326 columns.
+
+> **Note**: Fedwire files are handled exclusively through the `fileparser/wire` subpackage. `fileparser.Parse()` and `fileparser.DetectFileType()` do not handle `.fed` files. This follows the same design as ACH.
+
+### Table Structure
+
+All columns are `TypeText` since the wire format stores all values as strings. Column groups include mandatory fields (SenderSupplied, TypeSubType, IMAD, Amount, SenderDI, ReceiverDI, BusinessFunctionCode), financial institutions, parties, FI-to-FI information, advice records, cover payment, remittance, and system fields.
+
+### Limitations
+
+- **UPDATE only**: Only UPDATE operations on existing rows are supported for round-trip editing. INSERT/DELETE operations in SQL are not reflected in the output wire file.
+- **No new sections**: Optional message sections that were not present in the original file cannot be added via SQL modifications.
+- **No compression**: Compressed Fedwire files (`.fed.gz`, `.fed.zst`, etc.) are not supported.
+
+### Security Note
+
+Fedwire TableData structures expose sensitive banking information including routing numbers, account numbers, names, and transaction amounts. **Do not log or export TableData contents verbatim in production environments.**
+
+### Usage
+
+```go
+import "github.com/nao1215/fileparser/wire"
+
+// Parse Fedwire file
+f, err := os.Open("payment.fed")
+if err != nil {
+    log.Fatal(err)
+}
+defer f.Close()
+
+ts, err := wire.ParseReader(f)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Access the flat table
+table := ts.GetMessageTable()
+fmt.Printf("Columns: %d, Rows: %d\n", len(table.Headers), len(table.Records))
+
+// After SQL modifications, write back
+out, err := os.Create("modified.fed")
+if err != nil {
+    log.Fatal(err)
+}
+defer out.Close()
+
+if err := ts.WriteToWriter(out); err != nil {
+    log.Fatal(err)
+}
 ```
 
 ## Compression Formats
