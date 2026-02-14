@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-02-14
+
+### Added
+
+- **Fedwire file support** (Experimental):
+  - New `wire` subpackage for parsing legacy Fedwire message files (`.fed`)
+  - Bidirectional conversion between Fedwire files and TableData structures
+  - Single flat table with ~326 columns covering all FEDWireMessage fields
+  - All columns are `TypeText` (wire format stores everything as strings)
+  - Column groups: SenderSupplied, TypeSubType, IMAD, Amount, SenderDI, ReceiverDI, BusinessFunctionCode, financial institutions, parties, FI-to-FI information, advice records, cover payment, remittance, and system fields
+  - Round-trip editing: Fedwire → TableData → SQL modifications → Fedwire
+  - `ParseReader()` and `WriteToWriter()` for stream-based I/O
+  - Nil-safe public API: `ParseReader(nil)` and `WriteToWriter(nil)` return errors instead of panicking
+  - Built on [moov-io/wire](https://github.com/moov-io/wire) library
+  - Subpackage-only design (same as ACH): `fileparser.Parse()` and `DetectFileType()` do not handle `.fed` files
+
 ## [0.4.0] - 2026-02-13
 
 ### Added
@@ -86,6 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Records` - data rows as string slices
   - `ColumnTypes` - inferred types for each column
 
+[0.5.0]: https://github.com/nao1215/fileparser/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/nao1215/fileparser/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/nao1215/fileparser/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/nao1215/fileparser/compare/v0.1.0...v0.2.0
