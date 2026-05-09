@@ -11,7 +11,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/tiendc/go-deepcopy v1.7.2
 	github.com/ulikunitz/xz v0.5.15
-	github.com/xuri/excelize/v2 v2.10.0
+	github.com/xuri/excelize/v2 v2.10.1
 )
 
 require (
@@ -31,8 +31,8 @@ require (
 	github.com/moov-io/iso3166 v0.4.0 // indirect
 	github.com/moov-io/iso4217 v0.3.2 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/richardlehane/mscfb v1.0.4 // indirect
-	github.com/richardlehane/msoleps v1.0.4 // indirect
+	github.com/richardlehane/mscfb v1.0.6 // indirect
+	github.com/richardlehane/msoleps v1.0.6 // indirect
 	github.com/rickar/cal/v2 v2.1.27 // indirect
 	github.com/xuri/efp v0.0.1 // indirect
 	github.com/xuri/nfp v0.0.2-0.20250530014748-2ddeb826f9a9 // indirect
