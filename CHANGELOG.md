@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-06-01
+
+### Fixed
+
+- **LTSV duplicate labels are now rejected**: `parseLTSV` previously kept only the last value when a record repeated a label (e.g. `x:1\tx:2`), silently dropping the earlier value. A duplicate label within a record is now rejected with a `duplicate column name` error, matching the CSV/TSV parsers and keeping LTSV imports lossless. A label repeated across separate records (the normal column-per-row case) still parses.
+
 ## [0.5.1] - 2026-02-14
 
 ### Fixed
