@@ -130,6 +130,33 @@ func TestParse_LTSV(t *testing.T) {
 
 		assert.Error(t, err)
 	})
+
+	t.Run("returns error for a duplicate label within a record", func(t *testing.T) {
+		t.Parallel()
+
+		// "x" appears twice in the same record; keeping only the last value would
+		// silently drop the first, so this is rejected like a duplicate header.
+		reader := strings.NewReader("x:1\tx:2")
+
+		_, err := Parse(reader, LTSV)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "duplicate column name")
+	})
+
+	t.Run("allows the same label across different records", func(t *testing.T) {
+		t.Parallel()
+
+		// A label repeated on separate lines is the normal column-per-row case, not
+		// a duplicate, so it must still parse.
+		reader := strings.NewReader("x:1\ty:a\nx:2\ty:b")
+
+		result, err := Parse(reader, LTSV)
+
+		require.NoError(t, err)
+		assert.Equal(t, 2, len(result.Records))
+		assert.Equal(t, []string{"x", "y"}, result.Headers)
+	})
 }
 
 func TestParse_FromTestdata(t *testing.T) {

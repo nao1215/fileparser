@@ -798,6 +798,13 @@ func parseLTSV(reader io.Reader) (*TableData, error) {
 			if len(kv) == 2 {
 				key := strings.TrimSpace(kv[0])
 				value := strings.TrimSpace(kv[1])
+				// A label repeated within the same record cannot be represented as
+				// two distinct columns; keeping the last value would silently drop
+				// the earlier one, so reject it like the delimited parsers reject a
+				// duplicate header.
+				if _, dup := recordMap[key]; dup {
+					return nil, fmt.Errorf("duplicate column name %q in LTSV record", key)
+				}
 				recordMap[key] = value
 				// Track headers in first-seen order
 				if !headerSeen[key] {
