@@ -5,6 +5,10 @@
 [![MultiPlatformUnitTest](https://github.com/nao1215/fileparser/actions/workflows/unit_test.yml/badge.svg)](https://github.com/nao1215/fileparser/actions/workflows/unit_test.yml)
 ![Coverage](https://raw.githubusercontent.com/nao1215/octocovs-central-repo/main/badges/nao1215/fileparser/coverage.svg)
 
+>[!IMPORTANT]
+> This repository has been merged into [nao1215/filesql](https://github.com/nao1215/filesql) to simplify repository management.
+
+
 `fileparser` is a Go library for parsing various tabular data formats. It provides a unified interface for reading CSV, TSV, LTSV, JSON, JSONL, Parquet, and XLSX files, with optional compression support.
 
 This package is designed to be used by [filesql](https://github.com/nao1215/filesql), [fileprep](https://github.com/nao1215/fileprep), and [fileframe](https://github.com/nao1215/fileframe).
