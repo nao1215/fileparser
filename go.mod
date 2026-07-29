@@ -7,7 +7,7 @@ require (
 	github.com/klauspost/compress v1.18.6
 	github.com/moov-io/ach v1.61.0
 	github.com/moov-io/wire v0.15.7
-	github.com/pierrec/lz4/v4 v4.1.26
+	github.com/pierrec/lz4/v4 v4.1.27
 	github.com/stretchr/testify v1.11.1
 	github.com/tiendc/go-deepcopy v1.7.2
 	github.com/ulikunitz/xz v0.5.15
